@@ -227,7 +227,37 @@ void recursiveHalving(int taskId, int numTasks, std::vector<int> sequence)
     std::cout << "Child #" << taskId << " is performing local quicksort\n";
     std::sort( sequence.begin(), sequence.end() );
 
-    printVectorContents( sequence, taskId );
+    // Child with id 0 will gather all the sortied sequences and display the final result
+    if (taskId == 0)
+    {
+        int numOfSequencesToReceive = numTasks - 2;
+        std::vector<std::vector<int>> finalResult(numTasks);
+        finalResult[0] = sequence; // We already have the sorted sequence of child 0
+
+        while (numOfSequencesToReceive >= 0)
+        {
+            // Probe the incoming message size
+            MPI_Status receiveStatus;
+            MPI_Probe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &receiveStatus);
+
+            int arraySize;
+            MPI_Get_count(&receiveStatus, MPI_INT, &arraySize);
+
+            int sourceId = receiveStatus.MPI_SOURCE; // Extract the id of the sender
+
+            MPI_Recv((void*) &finalResult[sourceId], arraySize, MPI_INT, sourceId, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            --numOfSequencesToReceive;
+        }
+
+        printVectorContents(sequence, taskId);
+    }
+    else
+    {
+        // Every other child will send its sequence to process 0
+        MPI_Send((void*)&sequence[0], sequence.size(), MPI_INT, 0, 0, MPI_COMM_WORLD);
+    }
+
+    // printVectorContents( sequence, taskId );
 
     std::cout << "Child #" << taskId << " has finished!\n";
 }
