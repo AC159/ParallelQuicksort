@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <math.h>
+#include <algorithm>
 #include <mpi.h>
 
 #define CHUNK_SIZE 100
@@ -23,7 +24,7 @@ std::vector<int> generateUnsortedSequence(int sequenceSize)
 
     for (int i = 0; i < sequenceSize; ++i)
     {
-        sequence[i] = std::rand(); // random number between 0 and RAND_MAX
+        sequence[i] = std::rand() % 100000; // random number between 0 and 100000
     }
 
     return sequence;
@@ -223,5 +224,10 @@ void recursiveHalving(int taskId, int numTasks, std::vector<int> sequence)
     }
 
     // Perform local quicksort
+    std::cout << "Child #" << taskId << " is performing local quicksort\n";
+    std::sort( sequence.begin(), sequence.end() );
+
+    printVectorContents( sequence, taskId );
+
     std::cout << "Child #" << taskId << " has finished!\n";
 }
